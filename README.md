@@ -13,14 +13,16 @@ Refactor the codebase according to clean code principles covered in class:
 ## ⚠️ Important notes
 - All existing tests must continue to pass after refactoring
 - Only make minimal changes to tests if class interfaces change
-- Focus on improving code quality while maintaining functionality
+- Focus on improving code quality while maintaining functionality intact, don't extend it. Just upgrade how is it written.
 
 ## 🚀 How to run
 The easiest way to run this project:
 1. Install a JDK on your machine
-2. Open the project in VS Code
-3. Install the Java Extension Pack
+2. Open the project in VSCode
+3. Install the [Java Extension Pack](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack)
 4. Run tests or the demo by clicking the play button next to the test methods or the main Demo class
+
+Of course, as this is a regular Java project, any other execution mode is welcome.
 
 ## 🏗️ Project Structure
 - `Demo.java` - Main demo application
