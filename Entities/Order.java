@@ -2,6 +2,7 @@ package Entities;
 
 import ValueObjects.Address;
 import ValueObjects.OrderFlags;
+import Validator.Validator;
 
 public class Order {
     public Customer customer;
@@ -14,14 +15,14 @@ public class Order {
 
     public Order(Customer customer, double price, int quantity, Address address, OrderFlags flags, boolean isActive) {
         this.customer = customer;
-        this.price = price;
-        this.quantity = quantity;
+        this.price = Validator.validate(price, v -> v > 0, "Price must be greater than zero.");
+        this.quantity = Validator.validate(quantity, v -> v > 0, "Quantity must be greater than zero.");
         this.address = address;
         this.flags = flags;
         this.isActive = isActive;
         this.days = 0;
 
-        double discount = calculateDiscount(customer, price, quantity, flags);
+        double discount = calculateDiscount();
         if (discount > 0) {
             this.price = this.price * (1 - discount);
         }
@@ -32,7 +33,7 @@ public class Order {
         }
     }
 
-    private double calculateDiscount(Customer customer, double price, int quantity, OrderFlags flags) {
+    public double calculateDiscount() {
         double discount = 0;
 
         if (price * quantity > 100) {
@@ -72,46 +73,15 @@ public class Order {
             return "Error: Order not active";
         }
 
-        // We assume a customer's name is always valid so we don't check it
-
-        if (price <= 0) { // TODO: Validate on creation so we don't need this
-            result = "Error: Invalid price";
-        }
-
-        if (quantity <= 0) { // TODO: Validate on creation so we don't need this
-            result = "Error: Invalid quantity";
-        }
-
         double total = calculateTotalPrice();
-
-        switch (customer.getType()) {
-            case Customer.CustomerType.SILVER:
-                if (total > 100) {
-                    total = total * 0.92;
-                } else if (total > 75) {
-                    total = total * 0.96;
-                }
-                break;
-            case Customer.CustomerType.GOLD:
-                if (total > 100) {
-                    if (days > 30) {
-                        total = total * 0.85;
-                    } else {
-                        total = total * 0.9;
-                    }
-                } else if (total > 50) {
-                    total = total * 0.95;
-                }
-                break;
-            default:
-                // No discount
-                break;
-        }
-
-        total = total * getCountryTaxRate();
+        System.out.println("Total before discount and tax: $" + String.format("%.2f", total));
+        total *= calculateDiscount(total);
+        System.out.println("Total after discount: $" + String.format("%.2f", total));
+        total *= getCountryTaxRate();
+        System.out.println("Total after tax: $" + String.format("%.2f", total));
 
         if (total < 25) {
-            total = total + 5.99;
+            total += 5.99;
         }
 
         result = "Order #" + System.currentTimeMillis() + "\n";
@@ -121,7 +91,7 @@ public class Order {
         result += "Items: " + quantity + " x $" + price + "\n";
         result += "Total: $" + String.format("%.2f", total) + "\n";
 
-        if (flag == true) {
+        if (flag == true) { // TODO: Refactor this
             if (email == true) {
                 System.out.println("Sending email to " + email);
             }
@@ -133,6 +103,38 @@ public class Order {
         System.out.println("Saving to database...");
 
         return result;
+    }
+
+    public double calculateTotalPrice() {
+        return price * quantity;
+    }
+
+    private double calculateDiscount(double total) {
+        double discount = 0;
+        switch (customer.getType()) {
+            case Customer.CustomerType.SILVER:
+                if (total > 100) {
+                    discount = 0.08;
+                } else if (total > 75) {
+                    discount = 0.04;
+                }
+                break;
+            case Customer.CustomerType.GOLD:
+                if (total > 100) {
+                    if (days > 30) {
+                        discount = 0.15;
+                    } else {
+                        discount = 0.1;
+                    }
+                } else if (total > 50) {
+                    discount = 0.05;
+                }
+                break;
+            default:
+                // No discount
+                break;
+        }
+        return total * (1 - discount);
     }
 
     private double getCountryTaxRate() {
@@ -156,15 +158,17 @@ public class Order {
         return taxRate;
     }
 
-    public double calculateTotalPrice() {
-        return price * quantity;
-    }
-
     public void updateDays() {
         days = days + 1;
         if (days > 365) {
             isActive = false;
         }
+    }
+
+    public double getTotalWithTax() {
+        double total = calculateTotalPrice();
+        total *= getCountryTaxRate();
+        return total;
     }
 
     /*

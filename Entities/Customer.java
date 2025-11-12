@@ -3,6 +3,8 @@ package Entities;
 import ValueObjects.Email;
 import ValueObjects.Phone;
 
+import Validator.Validator;
+
 public class Customer {
     String name;
     Email email;
@@ -10,7 +12,7 @@ public class Customer {
     CustomerType type;
 
     public Customer(String name, String email, String phone, CustomerType type) {
-        this.name = validateName(name);
+        this.name = Validator.validate(name, v -> v != null && !v.isEmpty(), "Name cannot be null or empty");
         this.email = new Email(email);
         this.phone = new Phone(phone);
         this.type = type;
@@ -30,13 +32,6 @@ public class Customer {
 
     public CustomerType getType() {
         return type;
-    }
-
-    String validateName(String name) {
-        if (name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("Name cannot be null or empty");
-        }
-        return name;
     }
 
     public enum CustomerType {

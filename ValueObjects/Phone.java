@@ -11,7 +11,9 @@ public class Phone {
     }
 
     private boolean isValidPhoneNumber(String number) {
-        return number != null && number.matches("\\d{10}");
+        return number != null && number.matches(
+                // Pretty basic regex for phone number validation
+                "[+]?(?:\\(\\d+(?:\\.\\d+)?\\)|\\d+(?:\\.\\d+)?)(?:[ -]?(?:\\(\\d+(?:\\.\\d+)?\\)|\\d+(?:\\.\\d+)?))*(?:[ ]?(?:x|ext)\\.?[ ]?\\d{1,5})?");
     }
 
     public String getValue() {

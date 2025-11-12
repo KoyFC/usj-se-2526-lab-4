@@ -37,29 +37,13 @@ public class Manager {
         return "$" + String.format("%.2f", total);
     }
 
-    public double getTotalWithTax(Order order) { // TODO: Mover a order
-        double subtotal = order.calculateTotalPrice();
-
-        if (order.address.getCountry().equals("ES")) {
-            subtotal = subtotal * 1.21;
-        } else if (order.address.getCountry().equals("FR")) {
-            subtotal = subtotal * 1.20;
-        } else if (order.address.getCountry().equals("DE")) {
-            subtotal = subtotal * 1.19;
-        } else {
-            subtotal = subtotal * 1.15;
-        }
-
-        return subtotal;
-    }
-
     public void save(Order order, boolean email, boolean pdf, boolean backup) {
         if (order == null)
             return;
         if (!order.isActive)
             return;
 
-        double total = getTotalWithTax(order);
+        double total = order.getTotalWithTax();
 
         System.out.println("INSERT INTO orders VALUES ('" + order.customer.getName() + "', " + total + ")");
 
@@ -89,7 +73,8 @@ public class Manager {
             if (detailed) {
                 for (Order order : orders) {
                     if (order.isActive || includeInactive) {
-                        report = report + "Order: " + order.customer.getName() + " - $" + getTotalWithTax(order) + "\n";
+                        report = report + "Order: " + order.customer.getName() + " - $" + order.getTotalWithTax()
+                                + "\n";
                     }
                 }
             } else {
