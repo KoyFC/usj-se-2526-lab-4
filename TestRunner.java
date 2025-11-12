@@ -1,4 +1,4 @@
-import Entities.Order;
+import Entities.order;
 import Entities.Customer;
 import ValueObjects.Address;
 import ValueObjects.OrderFlags;
@@ -27,7 +27,7 @@ public class TestRunner {
 
         Customer customer = new Customer("John", "john@email.com", "555-1234", Customer.CustomerType.SILVER);
         Address address = new Address("123 Main St", "Madrid", "ES");
-        Order order = new Order(customer, 10.0, 2, address, new OrderFlags(), true);
+        order order = new order(customer, 10.0, 2, address, new OrderFlags(), true);
 
         assertEqual(order.customer.getName(), "John", "Order name");
         assertEqual(order.price, 10.0, "Order price");
@@ -43,25 +43,25 @@ public class TestRunner {
         Customer customer1 = new Customer("Alice", "alice@email.com", "555-5678", Customer.CustomerType.GOLD);
         Address address1 = new Address("456 Elm St", "Barcelona", "ES");
         OrderFlags flags1 = new OrderFlags().setShipping(OrderFlags.ShippingType.EXPRESS);
-        Order order1 = new Order(customer1, 60.0, 2, address1, flags1, true);
+        order order1 = new order(customer1, 60.0, 2, address1, flags1, true);
         String result1 = order1.process(true, false, false);
         assertNotNull(result1, "Gold order processing");
-        // System.out.println(result1);
+        System.out.println(result1);
         assertContains(result1, "130", "Gold order with tax"); // TODO: Fix expected value
 
         Customer customer2 = new Customer("Bob", "bob@email.com", "555-9999", Customer.CustomerType.NORMAL);
         Address address2 = new Address("123 Main St", "Paris", "FR");
-        Order order2 = new Order(customer2, 10.0, 1, address2, new OrderFlags(), true);
+        order order2 = new order(customer2, 10.0, 1, address2, new OrderFlags(), true);
         String result2 = order2.process(true, false, false);
         assertNotNull(result2, "Normal order processing");
         assertContains(result2, "17", "Normal order with shipping");
 
         Customer customer3 = new Customer("Charlie", "charlie@email.com", "555-0000", Customer.CustomerType.SILVER);
         Address address3 = new Address("789 Oak St", "Berlin", "DE");
-        Order order3 = new Order(customer3, 80.0, 2, address3, new OrderFlags(), true);
+        order order3 = new order(customer3, 80.0, 2, address3, new OrderFlags(), true);
         String result3 = order3.process(false, false, false);
         assertNotNull(result3, "Silver order processing");
-        // System.out.println(result3);
+        System.out.println(result3);
         assertContains(result3, "175", "Silver order with discount and tax"); // TODO: Fix expected value
 
         System.out.println();
@@ -78,7 +78,7 @@ public class TestRunner {
 
         Customer customer2 = new Customer("Test", "test@email.com", "555-0000", Customer.CustomerType.NORMAL);
         Address address2 = new Address("456 Side St", "Madrid", "ES");
-        Order order = new Order(customer2, 50.0, 2, address2, new OrderFlags(), true);
+        order order = new order(customer2, 50.0, 2, address2, new OrderFlags(), true);
         double total = order.getTotalWithTax();
         assertEqual(total, 121.0, "Manager tax calculation");
 
@@ -99,7 +99,7 @@ public class TestRunner {
 
         Customer customer = new Customer("Emily", "emily@email.com", "555-2222", Customer.CustomerType.NORMAL);
         Address address = new Address("123 Main St", "London", "UK");
-        Order o = new Order(customer, 20.0, 3, address, new OrderFlags(), true);
+        order o = new order(customer, 20.0, 3, address, new OrderFlags(), true);
 
         boolean invalid = Utils.isInvalid(o);
         assertEqual(invalid, false, "Valid order check");
@@ -107,7 +107,7 @@ public class TestRunner {
         double handled = Utils.handle(o);
         assertEqual(handled, 24.2, "Utils handle calculation");
 
-        Order nullOrder = Utils.findOrder(null, "NonExistent");
+        order nullOrder = Utils.findOrder(null, "NonExistent");
         assertNull(nullOrder, "Utils find non-existent order");
 
         double calc = Utils.calc(10, 5, 1);
