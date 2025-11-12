@@ -22,10 +22,10 @@ public class TestRunner {
 
         Order o = new Order("John", "john@email.com", "555-1234", 1, 10.0, 2, "ES", true);
 
-        assertEqual(o.n, "John", "Order name");
-        assertEqual(o.p, 10.0, "Order price");
-        assertEqual(o.q, 2, "Order quantity");
-        assertEqual(o.cc, "ES", "Order country");
+        assertEqual(o.name, "John", "Order name");
+        assertEqual(o.price, 10.0, "Order price");
+        assertEqual(o.quantity, 2, "Order quantity");
+        assertEqual(o.country, "ES", "Order country");
 
         System.out.println();
     }
@@ -34,17 +34,17 @@ public class TestRunner {
         System.out.println("Testing Order Processing...");
 
         Order o1 = new Order("Alice", "alice@email.com", "555-5678", 3, 60.0, 2, "ES", true);
-        String result1 = o1.proc(true, false, false);
+        String result1 = o1.process(true, false, false);
         assertNotNull(result1, "Gold order processing");
         assertContains(result1, "130", "Gold order with tax");
 
         Order o2 = new Order("Bob", "bob@email.com", "555-9999", 1, 10.0, 1, "FR", true);
-        String result2 = o2.proc(true, false, false);
+        String result2 = o2.process(true, false, false);
         assertNotNull(result2, "Normal order processing");
         assertContains(result2, "17", "Normal order with shipping");
 
         Order o3 = new Order("Charlie", "charlie@email.com", "555-0000", 2, 80.0, 2, "DE", true);
-        String result3 = o3.proc(false, false, false);
+        String result3 = o3.process(false, false, false);
         assertNotNull(result3, "Silver order processing");
         assertContains(result3, "175", "Silver order with discount and tax");
 

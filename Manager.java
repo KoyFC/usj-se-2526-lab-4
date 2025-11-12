@@ -17,7 +17,7 @@ public class Manager {
         if (price <= 0)
             return;
 
-        Order o = new Order(name, email, phone, customerType, price, quantity, country, true);
+        Order order = new Order(name, email, phone, customerType, price, quantity, country, true);
 
         double discount = 0;
         if (customerType == 3 && price * quantity > 100) {
@@ -26,21 +26,21 @@ public class Manager {
             discount = 0.08;
         }
 
-        o.p = o.p * (1 - discount);
+        order.price = order.price * (1 - discount);
 
         if (expressShipping) {
-            o.p = o.p + 9.99;
+            order.price = order.price + 9.99;
         }
         if (giftWrap) {
-            o.p = o.p + 2.99;
+            order.price = order.price + 2.99;
         }
         if (insurance) {
-            o.p = o.p + 4.99;
+            order.price = order.price + 4.99;
         }
 
-        orders.add(o);
+        orders.add(order);
 
-        revenue = revenue + (o.p * o.q);
+        revenue = revenue + (order.price * order.quantity);
     }
 
     public String formatPrice(double p, int tier, int qty) {
@@ -56,13 +56,13 @@ public class Manager {
     }
 
     public double getTotalWithTax(Order o) {
-        double sub = o.p * o.q;
+        double sub = o.price * o.quantity;
 
-        if (o.cc.equals("ES")) {
+        if (o.country.equals("ES")) {
             sub = sub * 1.21;
-        } else if (o.cc.equals("FR")) {
+        } else if (o.country.equals("FR")) {
             sub = sub * 1.20;
-        } else if (o.cc.equals("DE")) {
+        } else if (o.country.equals("DE")) {
             sub = sub * 1.19;
         } else {
             sub = sub * 1.15;
@@ -72,12 +72,12 @@ public class Manager {
     }
 
     public double calculateDiscount(Order o) {
-        double total = o.p * o.q;
+        double total = o.price * o.quantity;
         double discount = 0;
 
-        if (o.c == 3 && total > 100) {
+        if (o.customerType == 3 && total > 100) {
             discount = total * 0.1;
-        } else if (o.c == 2 && total > 100) {
+        } else if (o.customerType == 2 && total > 100) {
             discount = total * 0.08;
         }
 
@@ -87,22 +87,22 @@ public class Manager {
     public void save(Order o, boolean email, boolean pdf, boolean backup) {
         if (o == null)
             return;
-        if (!o.a)
+        if (!o.isActive)
             return;
 
         double total = getTotalWithTax(o);
 
-        System.out.println("INSERT INTO orders VALUES ('" + o.n + "', " + total + ")");
+        System.out.println("INSERT INTO orders VALUES ('" + o.name + "', " + total + ")");
 
         if (email) {
-            System.out.println("EMAIL: Order confirmed for " + o.n);
-            System.out.println("To: " + o.e);
+            System.out.println("EMAIL: Order confirmed for " + o.name);
+            System.out.println("To: " + o.email);
             System.out.println("Total: $" + total);
         }
 
         if (pdf) {
             System.out.println("PDF: Generating invoice...");
-            System.out.println("Customer: " + o.n);
+            System.out.println("Customer: " + o.name);
             System.out.println("Amount: $" + total);
         }
 
@@ -119,8 +119,8 @@ public class Manager {
         if (type == 1) {
             if (detailed) {
                 for (Order o : orders) {
-                    if (o.a || includeInactive) {
-                        report = report + "Order: " + o.n + " - $" + getTotalWithTax(o) + "\n";
+                    if (o.isActive || includeInactive) {
+                        report = report + "Order: " + o.name + " - $" + getTotalWithTax(o) + "\n";
                     }
                 }
             } else {
@@ -129,20 +129,20 @@ public class Manager {
         } else if (type == 2) {
             if (detailed) {
                 for (Order o : orders) {
-                    if (o.c == 3) {
-                        report = report + "GOLD: " + o.n + "\n";
-                    } else if (o.c == 2) {
-                        report = report + "SILVER: " + o.n + "\n";
+                    if (o.customerType == 3) {
+                        report = report + "GOLD: " + o.name + "\n";
+                    } else if (o.customerType == 2) {
+                        report = report + "SILVER: " + o.name + "\n";
                     } else {
-                        report = report + "NORMAL: " + o.n + "\n";
+                        report = report + "NORMAL: " + o.name + "\n";
                     }
                 }
             } else {
                 int gold = 0, silver = 0, normal = 0;
                 for (Order o : orders) {
-                    if (o.c == 3)
+                    if (o.customerType == 3)
                         gold++;
-                    else if (o.c == 2)
+                    else if (o.customerType == 2)
                         silver++;
                     else
                         normal++;
@@ -160,7 +160,7 @@ public class Manager {
         double min = 999999;
 
         for (Order o : orders) {
-            double t = o.p * o.q;
+            double t = o.price * o.quantity;
             avg = avg + t;
             if (t > max)
                 max = t;
@@ -192,33 +192,33 @@ public class Manager {
     public boolean validateAndProcess(Order o, int action) {
         if (o == null)
             return false;
-        if (o.n == null || o.n == "")
+        if (o.name == null || o.name == "")
             return false;
-        if (o.e == null || o.e == "")
+        if (o.email == null || o.email == "")
             return false;
-        if (o.p <= 0)
+        if (o.price <= 0)
             return false;
-        if (o.q <= 0)
+        if (o.quantity <= 0)
             return false;
 
         if (action == 1) {
             orders.add(o);
-            revenue = revenue + o.p * o.q;
+            revenue = revenue + o.price * o.quantity;
             System.out.println("Order processed normally");
             return true;
         } else if (action == 2) {
             orders.add(0, o);
-            revenue = revenue + o.p * o.q * 1.5;
+            revenue = revenue + o.price * o.quantity * 1.5;
             System.out.println("URGENT order processed");
             return true;
         } else if (action == 3) {
             System.out.println("Order sent for review");
-            if (o.p * o.q > 500) {
+            if (o.price * o.quantity > 500) {
                 System.out.println("High value - needs approval");
                 return false;
             }
             orders.add(o);
-            revenue = revenue + o.p * o.q;
+            revenue = revenue + o.price * o.quantity;
             return true;
         }
 

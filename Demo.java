@@ -6,13 +6,13 @@ public class Demo {
                 // Create and process a normal order
                 Order order1 = new Order("John Smith", "john@email.com", "555-1234",
                                 1, 25.0, 2, "ES", true);
-                System.out.println(order1.proc(true, true, false));
+                System.out.println(order1.process(true, true, false));
 
                 // Gold customer order with discount
                 Order order2 = new Order("Mary VIP", "mary@email.com", "555-5678",
                                 3, 60.0, 2, "ES", true);
-                order2.d = 35; // Old customer
-                System.out.println(order2.proc(false, false, true));
+                order2.days = 35; // Old customer
+                System.out.println(order2.process(false, false, true));
 
                 // Use Manager to handle orders
                 Manager manager = new Manager();

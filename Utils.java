@@ -4,11 +4,11 @@ public class Utils {
 
     public static double handle(Order o) {
         // increase by tax
-        double t = o.p * 1.21;
+        double t = o.price * 1.21;
 
-        o.d = o.d + 1;
+        o.days = o.days + 1;
 
-        System.out.println("Processing order for " + o.n);
+        System.out.println("Processing order for " + o.name);
 
         return t;
     }
@@ -16,25 +16,25 @@ public class Utils {
     public static boolean isInvalid(Order o) {
         if (o == null)
             return true;
-        if (!o.a)
+        if (!o.isActive)
             return true;
-        if (o.p <= 0)
+        if (o.price <= 0)
             return true;
-        if (o.q <= 0)
+        if (o.quantity <= 0)
             return true;
-        if (o.n == null || o.n == "")
+        if (o.name == null || o.name == "")
             return true;
         return false;
     }
 
     public static boolean isNotReady(Order o) {
-        return isInvalid(o) || o.d < 1;
+        return isInvalid(o) || o.days < 1;
     }
 
     public static Order findOrder(List<Order> orders, String name) {
         try {
             for (Order o : orders) {
-                if (o.n.equals(name)) {
+                if (o.name.equals(name)) {
                     return o;
                 }
             }
@@ -99,19 +99,19 @@ public class Utils {
         String s = ""; // string for result
 
         // add the name
-        s = s + o.n;
+        s = s + o.name;
 
         // add separator
         s = s + " | ";
 
         // add email
-        s = s + o.e;
+        s = s + o.email;
 
         // add another separator
         s = s + " | ";
 
         // calculate total
-        double t = o.p * o.q; // t is total
+        double t = o.price * o.quantity; // t is total
 
         // add total
         s = s + "$" + t;
@@ -121,7 +121,7 @@ public class Utils {
 
     public static void process(Order o) {
         try {
-            String upper = o.n.toUpperCase();
+            String upper = o.name.toUpperCase();
             System.out.println(upper);
         } catch (NullPointerException e) {
             // do nothing

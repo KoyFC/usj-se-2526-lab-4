@@ -1,39 +1,39 @@
 public class Order {
-    // this is the name
-    public String n; // name
-    public String e; // email
-    public String t; // phone
-    public int c; // customer type
-    public double p; // price
-    public int q; // qty
-    public String cc; // country
-    public boolean a; // active
-    public int d; // days
+    public String name;
+    public String email;
+    public String phone;
+    public int customerType;
+    public double price;
+    public int quantity;
+    public String country;
+    public boolean isActive;
+    public int days;
 
-    public Order(String n, String e, String t, int c, double p, int q, String cc, boolean a) {
-        this.n = n;
-        this.e = e;
-        this.t = t;
-        this.c = c;
-        this.p = p;
-        this.q = q;
-        this.cc = cc;
-        this.a = a;
-        this.d = 0;
+    public Order(String name, String email, String phone, int customerType, double price, int quantity, String country,
+            boolean isActive) {
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.customerType = customerType;
+        this.price = price;
+        this.quantity = quantity;
+        this.country = country;
+        this.isActive = isActive;
+        this.days = 0;
     }
 
-    public String proc(boolean flag, boolean email, boolean pdf) {
+    public String process(boolean flag, boolean email, boolean pdf) {
         String result = "";
 
-        if (a == true) {
-            if (n != null && n != "") {
-                if (p > 0) {
-                    if (q > 0) {
-                        double total = p * q;
+        if (isActive == true) {
+            if (name != null && name != "") {
+                if (price > 0) {
+                    if (quantity > 0) {
+                        double total = price * quantity;
 
-                        if (c == 3) {
+                        if (customerType == 3) {
                             if (total > 100) {
-                                if (d > 30) {
+                                if (days > 30) {
                                     total = total * 0.85;
                                 } else {
                                     total = total * 0.9;
@@ -41,7 +41,7 @@ public class Order {
                             } else if (total > 50) {
                                 total = total * 0.95;
                             }
-                        } else if (c == 2) {
+                        } else if (customerType == 2) {
                             if (total > 100) {
                                 total = total * 0.92;
                             } else if (total > 75) {
@@ -49,13 +49,13 @@ public class Order {
                             }
                         }
 
-                        if (cc.equals("ES")) {
+                        if (country.equals("ES")) {
                             total = total * 1.21;
-                        } else if (cc.equals("FR")) {
+                        } else if (country.equals("FR")) {
                             total = total * 1.20;
-                        } else if (cc.equals("DE")) {
+                        } else if (country.equals("DE")) {
                             total = total * 1.19;
-                        } else if (cc.equals("UK")) {
+                        } else if (country.equals("UK")) {
                             total = total * 1.20;
                         } else {
                             total = total * 1.15;
@@ -66,15 +66,15 @@ public class Order {
                         }
 
                         result = "Order #" + System.currentTimeMillis() + "\n";
-                        result = result + "Customer: " + n + "\n";
-                        result = result + "Email: " + e + "\n";
-                        result = result + "Phone: " + t + "\n";
-                        result = result + "Items: " + q + " x $" + p + "\n";
+                        result = result + "Customer: " + name + "\n";
+                        result = result + "Email: " + email + "\n";
+                        result = result + "Phone: " + phone + "\n";
+                        result = result + "Items: " + quantity + " x $" + price + "\n";
                         result = result + "Total: $" + String.format("%.2f", total) + "\n";
 
                         if (flag == true) {
                             if (email == true) {
-                                System.out.println("Sending email to " + e);
+                                System.out.println("Sending email to " + email);
                             }
                             if (pdf == true) {
                                 System.out.println("Generating PDF invoice");
@@ -99,14 +99,14 @@ public class Order {
         return result;
     }
 
-    public double calc() {
-        return p * q;
+    public double calculateTotalPrice() {
+        return price * quantity;
     }
 
-    public void upd() {
-        d = d + 1;
-        if (d > 365) {
-            a = false;
+    public void updateDays() {
+        days = days + 1;
+        if (days > 365) {
+            isActive = false;
         }
     }
 
@@ -115,12 +115,12 @@ public class Order {
 
         Order o1 = new Order("John Doe", "john@email.com", "555-1234", 1, 15.0, 2, "ES", true);
         System.out.println("Normal Order:");
-        System.out.println(o1.proc(true, true, false));
+        System.out.println(o1.process(true, true, false));
         System.out.println();
 
         Order o2 = new Order("Jane Smith", "jane@email.com", "555-5678", 3, 60.0, 2, "ES", true);
-        o2.d = 35;
+        o2.days = 35;
         System.out.println("Gold Order (Old Customer):");
-        System.out.println(o2.proc(true, false, true));
+        System.out.println(o2.process(true, false, true));
     }
 }
