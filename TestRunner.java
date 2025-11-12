@@ -92,11 +92,11 @@ public class TestRunner {
         double calc = Utils.calc(10, 5, 1);
         assertEqual(calc, 15.0, "Utils calc addition");
 
-        String formatted = Utils.fmt(o);
+        String formatted = Utils.formatOrder(o);
         assertContains(formatted, "Emily", "Utils format contains name");
         assertContains(formatted, "60", "Utils format contains total");
 
-        boolean check = Utils.check("test", 3, false);
+        boolean check = Utils.validateString("test", 3, false);
         assertEqual(check, true, "Utils check validation");
 
         double withFees = Utils.applyFees(100, 1, false, true);

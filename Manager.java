@@ -56,53 +56,53 @@ public class Manager {
     }
 
     public double getTotalWithTax(Order o) {
-        double sub = o.price * o.quantity;
+        double subtotal = o.price * o.quantity;
 
         if (o.country.equals("ES")) {
-            sub = sub * 1.21;
+            subtotal = subtotal * 1.21;
         } else if (o.country.equals("FR")) {
-            sub = sub * 1.20;
+            subtotal = subtotal * 1.20;
         } else if (o.country.equals("DE")) {
-            sub = sub * 1.19;
+            subtotal = subtotal * 1.19;
         } else {
-            sub = sub * 1.15;
+            subtotal = subtotal * 1.15;
         }
 
-        return sub;
+        return subtotal;
     }
 
-    public double calculateDiscount(Order o) {
-        double total = o.price * o.quantity;
+    public double calculateDiscount(Order order) {
+        double total = order.price * order.quantity;
         double discount = 0;
 
-        if (o.customerType == 3 && total > 100) {
+        if (order.customerType == 3 && total > 100) {
             discount = total * 0.1;
-        } else if (o.customerType == 2 && total > 100) {
+        } else if (order.customerType == 2 && total > 100) {
             discount = total * 0.08;
         }
 
         return discount;
     }
 
-    public void save(Order o, boolean email, boolean pdf, boolean backup) {
-        if (o == null)
+    public void save(Order order, boolean email, boolean pdf, boolean backup) {
+        if (order == null)
             return;
-        if (!o.isActive)
+        if (!order.isActive)
             return;
 
-        double total = getTotalWithTax(o);
+        double total = getTotalWithTax(order);
 
-        System.out.println("INSERT INTO orders VALUES ('" + o.name + "', " + total + ")");
+        System.out.println("INSERT INTO orders VALUES ('" + order.name + "', " + total + ")");
 
         if (email) {
-            System.out.println("EMAIL: Order confirmed for " + o.name);
-            System.out.println("To: " + o.email);
+            System.out.println("EMAIL: Order confirmed for " + order.name);
+            System.out.println("To: " + order.email);
             System.out.println("Total: $" + total);
         }
 
         if (pdf) {
             System.out.println("PDF: Generating invoice...");
-            System.out.println("Customer: " + o.name);
+            System.out.println("Customer: " + order.name);
             System.out.println("Amount: $" + total);
         }
 
@@ -155,26 +155,26 @@ public class Manager {
     }
 
     public void stats(boolean print, boolean save, boolean email) {
-        double avg = 0;
+        double average = 0;
         double max = 0;
         double min = 999999;
 
-        for (Order o : orders) {
-            double t = o.price * o.quantity;
-            avg = avg + t;
-            if (t > max)
-                max = t;
-            if (t < min)
-                min = t;
+        for (Order order : orders) {
+            double orderTotal = order.price * order.quantity;
+            average = average + orderTotal;
+            if (orderTotal > max)
+                max = orderTotal;
+            if (orderTotal < min)
+                min = orderTotal;
         }
 
         if (orders.size() > 0) {
-            avg = avg / orders.size();
+            average = average / orders.size();
         }
 
         if (print) {
             System.out.println("=== STATISTICS ===");
-            System.out.println("Average: $" + avg);
+            System.out.println("Average: $" + average);
             System.out.println("Max: $" + max);
             System.out.println("Min: $" + min);
             System.out.println("Total Orders: " + orders.size());
@@ -189,36 +189,36 @@ public class Manager {
         }
     }
 
-    public boolean validateAndProcess(Order o, int action) {
-        if (o == null)
+    public boolean validateAndProcess(Order order, int action) {
+        if (order == null)
             return false;
-        if (o.name == null || o.name == "")
+        if (order.name == null || order.name == "")
             return false;
-        if (o.email == null || o.email == "")
+        if (order.email == null || order.email == "")
             return false;
-        if (o.price <= 0)
+        if (order.price <= 0)
             return false;
-        if (o.quantity <= 0)
+        if (order.quantity <= 0)
             return false;
 
         if (action == 1) {
-            orders.add(o);
-            revenue = revenue + o.price * o.quantity;
+            orders.add(order);
+            revenue = revenue + order.price * order.quantity;
             System.out.println("Order processed normally");
             return true;
         } else if (action == 2) {
-            orders.add(0, o);
-            revenue = revenue + o.price * o.quantity * 1.5;
+            orders.add(0, order);
+            revenue = revenue + order.price * order.quantity * 1.5;
             System.out.println("URGENT order processed");
             return true;
         } else if (action == 3) {
             System.out.println("Order sent for review");
-            if (o.price * o.quantity > 500) {
+            if (order.price * order.quantity > 500) {
                 System.out.println("High value - needs approval");
                 return false;
             }
-            orders.add(o);
-            revenue = revenue + o.price * o.quantity;
+            orders.add(order);
+            revenue = revenue + order.price * order.quantity;
             return true;
         }
 

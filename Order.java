@@ -113,14 +113,14 @@ public class Order {
     public static void main(String[] args) {
         System.out.println("=== Order Demo ===\n");
 
-        Order o1 = new Order("John Doe", "john@email.com", "555-1234", 1, 15.0, 2, "ES", true);
+        Order order1 = new Order("John Doe", "john@email.com", "555-1234", 1, 15.0, 2, "ES", true);
         System.out.println("Normal Order:");
-        System.out.println(o1.process(true, true, false));
+        System.out.println(order1.process(true, true, false));
         System.out.println();
 
-        Order o2 = new Order("Jane Smith", "jane@email.com", "555-5678", 3, 60.0, 2, "ES", true);
-        o2.days = 35;
+        Order order2 = new Order("Jane Smith", "jane@email.com", "555-5678", 3, 60.0, 2, "ES", true);
+        order2.days = 35;
         System.out.println("Gold Order (Old Customer):");
-        System.out.println(o2.process(true, false, true));
+        System.out.println(order2.process(true, false, true));
     }
 }

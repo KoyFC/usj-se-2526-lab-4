@@ -36,7 +36,7 @@ public class Demo {
 
                 // Use some utilities
                 Utils.handle(order3);
-                Utils.fmt(order3);
+                Utils.formatOrder(order3);
                 Utils.calc(100, 21, 3);
                 Utils.applyFees(100, 1, false, true);
 
