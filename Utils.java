@@ -6,11 +6,11 @@ public class Utils {
 
     public static double handle(Order order) {
         // increase by tax
-        double total = order.price * 1.21;
+        double total = order.getCartItem().getPrice() * 1.21;
 
-        order.days = order.days + 1;
+        order.updateDays();
 
-        System.out.println("Processing order for " + order.customer.getName());
+        System.out.println("Processing order for " + order.getCustomer().getName());
 
         return total;
     }
@@ -18,26 +18,25 @@ public class Utils {
     public static boolean isInvalid(Order order) {
         if (order == null)
             return true;
-        if (!order.isActive)
+        if (!order.isActive())
             return true;
-        if (order.price <= 0)
+        if (order.getCartItem().getQuantity() <= 0)
             return true;
-        if (order.quantity <= 0)
+        if (order.getCartItem().getQuantity() <= 0)
             return true;
-        if (order.customer.getName() == null || order.customer.getName() == "") // TODO: All instances of name
-                                                                                // should be validated
+        if (order.getCustomer().getName() == null || order.getCustomer().getName() == "")
             return true;
         return false;
     }
 
     public static boolean isNotReady(Order order) {
-        return isInvalid(order) || order.days < 1;
+        return isInvalid(order) || order.getDays() < 1;
     }
 
     public static Order findOrder(List<Order> orders, String name) {
         try {
             for (Order order : orders) {
-                if (order.customer.getName().equals(name)) {
+                if (order.getCustomer().getName().equals(name)) {
                     return order;
                 }
             }
@@ -97,14 +96,14 @@ public class Utils {
     }
 
     public static String formatOrder(Order order) {
-        String resultString = order.customer.getName() + " | " + order.customer.getEmail() + " | $"
+        String resultString = order.getCustomer().getName() + " | " + order.getCustomer().getEmail() + " | $"
                 + order.calculateTotalPrice();
         return resultString;
     }
 
     public static void processOrder(Order order) {
         try {
-            String upper = order.customer.getName().toUpperCase();
+            String upper = order.getCustomer().getName().toUpperCase();
             System.out.println(upper);
         } catch (NullPointerException e) {
             // do nothing

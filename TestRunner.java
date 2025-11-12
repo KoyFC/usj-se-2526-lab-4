@@ -1,7 +1,8 @@
-import Entities.order;
+import Entities.Order;
 import Entities.Customer;
 import ValueObjects.Address;
 import ValueObjects.OrderFlags;
+import ValueObjects.CartItem;
 
 public class TestRunner {
 
@@ -27,12 +28,13 @@ public class TestRunner {
 
         Customer customer = new Customer("John", "john@email.com", "555-1234", Customer.CustomerType.SILVER);
         Address address = new Address("123 Main St", "Madrid", "ES");
-        order order = new order(customer, 10.0, 2, address, new OrderFlags(), true);
+        CartItem cartItem = new CartItem(10.0, 2);
+        Order order = new Order(customer, cartItem, address, new OrderFlags(), true);
 
-        assertEqual(order.customer.getName(), "John", "Order name");
-        assertEqual(order.price, 10.0, "Order price");
-        assertEqual(order.quantity, 2, "Order quantity");
-        assertEqual(order.address.getCountry(), "ES", "Order country");
+        assertEqual(order.getCustomer().getName(), "John", "Order name");
+        assertEqual(order.getCartItem().getPrice(), 10.0, "Order price");
+        assertEqual(order.getCartItem().getQuantity(), 2, "Order quantity");
+        assertEqual(order.getAddress().getCountry(), "ES", "Order country");
 
         System.out.println();
     }
@@ -43,26 +45,29 @@ public class TestRunner {
         Customer customer1 = new Customer("Alice", "alice@email.com", "555-5678", Customer.CustomerType.GOLD);
         Address address1 = new Address("456 Elm St", "Barcelona", "ES");
         OrderFlags flags1 = new OrderFlags().setShipping(OrderFlags.ShippingType.EXPRESS);
-        order order1 = new order(customer1, 60.0, 2, address1, flags1, true);
+        CartItem cartItem1 = new CartItem(60.0, 2);
+        Order order1 = new Order(customer1, cartItem1, address1, flags1, true);
         String result1 = order1.process(true, false, false);
         assertNotNull(result1, "Gold order processing");
-        System.out.println(result1);
-        assertContains(result1, "130", "Gold order with tax"); // TODO: Fix expected value
+        // System.out.println(result1);
+        assertContains(result1, "130", "Gold order with tax");
 
         Customer customer2 = new Customer("Bob", "bob@email.com", "555-9999", Customer.CustomerType.NORMAL);
         Address address2 = new Address("123 Main St", "Paris", "FR");
-        order order2 = new order(customer2, 10.0, 1, address2, new OrderFlags(), true);
+        CartItem cartItem2 = new CartItem(10.0, 1);
+        Order order2 = new Order(customer2, cartItem2, address2, new OrderFlags(), true);
         String result2 = order2.process(true, false, false);
         assertNotNull(result2, "Normal order processing");
         assertContains(result2, "17", "Normal order with shipping");
 
         Customer customer3 = new Customer("Charlie", "charlie@email.com", "555-0000", Customer.CustomerType.SILVER);
         Address address3 = new Address("789 Oak St", "Berlin", "DE");
-        order order3 = new order(customer3, 80.0, 2, address3, new OrderFlags(), true);
+        CartItem cartItem3 = new CartItem(80.0, 2);
+        Order order3 = new Order(customer3, cartItem3, address3, new OrderFlags(), true);
         String result3 = order3.process(false, false, false);
         assertNotNull(result3, "Silver order processing");
-        System.out.println(result3);
-        assertContains(result3, "175", "Silver order with discount and tax"); // TODO: Fix expected value
+        // System.out.println(result3);
+        assertContains(result3, "175", "Silver order with discount and tax");
 
         System.out.println();
     }
@@ -74,18 +79,20 @@ public class TestRunner {
         Customer customer1 = new Customer("David", "david@email.com", "555-1111", Customer.CustomerType.NORMAL);
         Address address1 = new Address("123 Main St", "Madrid", "ES");
         OrderFlags flags1 = new OrderFlags();
-        manager.createOrder(customer1, address1, 50.0, 2, flags1);
+        CartItem cartItem1 = new CartItem(50.0, 2);
+        manager.createOrder(customer1, address1, cartItem1, flags1);
 
         Customer customer2 = new Customer("Test", "test@email.com", "555-0000", Customer.CustomerType.NORMAL);
         Address address2 = new Address("456 Side St", "Madrid", "ES");
-        order order = new order(customer2, 50.0, 2, address2, new OrderFlags(), true);
+        CartItem cartItem2 = new CartItem(50.0, 2);
+        Order order = new Order(customer2, cartItem2, address2, new OrderFlags(), true);
         double total = order.getTotalWithTax();
         assertEqual(total, 121.0, "Manager tax calculation");
 
         double discount = order.calculateDiscount();
         assertEqual(discount, 0.0, "Manager discount calculation");
 
-        String formatted = manager.formatPrice(50.0, 2, 2);
+        String formatted = manager.formatPrice(cartItem2, 2);
         assertContains(formatted, "$100", "Manager price formatting");
 
         String report = manager.generateReport(1, false, false);
@@ -99,7 +106,8 @@ public class TestRunner {
 
         Customer customer = new Customer("Emily", "emily@email.com", "555-2222", Customer.CustomerType.NORMAL);
         Address address = new Address("123 Main St", "London", "UK");
-        order o = new order(customer, 20.0, 3, address, new OrderFlags(), true);
+        CartItem cartItem = new CartItem(20.0, 3);
+        Order o = new Order(customer, cartItem, address, new OrderFlags(), true);
 
         boolean invalid = Utils.isInvalid(o);
         assertEqual(invalid, false, "Valid order check");
@@ -107,7 +115,7 @@ public class TestRunner {
         double handled = Utils.handle(o);
         assertEqual(handled, 24.2, "Utils handle calculation");
 
-        order nullOrder = Utils.findOrder(null, "NonExistent");
+        Order nullOrder = Utils.findOrder(null, "NonExistent");
         assertNull(nullOrder, "Utils find non-existent order");
 
         double calc = Utils.calc(10, 5, 1);

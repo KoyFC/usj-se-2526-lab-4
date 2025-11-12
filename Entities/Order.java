@@ -1,22 +1,34 @@
 package Entities;
 
 import ValueObjects.Address;
+import ValueObjects.CartItem;
 import ValueObjects.OrderFlags;
 import Validator.Validator;
 
 public class Order {
-    public Customer customer;
-    public double price;
-    public int quantity;
-    public Address address;
-    public OrderFlags flags;
-    public boolean isActive;
-    public int days;
+    private Customer customer;
+    private CartItem cartItem;
+    private Address address;
+    private OrderFlags flags;
+    private boolean isActive;
+    private int days;
 
-    public Order(Customer customer, double price, int quantity, Address address, OrderFlags flags, boolean isActive) {
+    public Order(Customer customer, CartItem cartItem, Address address, OrderFlags flags, boolean isActive) {
         this.customer = customer;
-        this.price = Validator.validate(price, v -> v > 0, "Price must be greater than zero.");
-        this.quantity = Validator.validate(quantity, v -> v > 0, "Quantity must be greater than zero.");
+        this.cartItem = cartItem;
+        this.address = address;
+        this.flags = flags;
+        this.isActive = isActive;
+        this.days = 0;
+
+        // double discount = calculateDiscount();
+        // if (discount > 0) {
+        // this.price = this.price * (1 - discount);
+        // }
+        this.cartItem.setQuantity(
+                Validator.validate(
+                        cartItem.getQuantity(), v -> v > 0,
+                        "Quantity must be greater than zero."));
         this.address = address;
         this.flags = flags;
         this.isActive = isActive;
@@ -36,7 +48,7 @@ public class Order {
     public double calculateDiscount() {
         double discount = 0;
 
-        if (price * quantity > 100) {
+        if (cartItem.getPrice() * cartItem.getQuantity() > 100) {
             switch (customer.getType()) {
                 case Customer.CustomerType.GOLD:
                     discount = 0.1;
@@ -90,12 +102,12 @@ public class Order {
         result += "Customer: " + customer.getName() + "\n";
         result += "Email: " + customer.getEmail() + "\n";
         result += "Phone: " + customer.getPhone() + "\n";
-        result += "Items: " + quantity + " x $" + price + "\n";
+        result += "Items: " + cartItem.getQuantity() + " x $" + cartItem.getPrice() + "\n";
         result += "Total: $" + String.format("%.2f", total) + "\n";
 
         if (flag == true) { // TODO: Refactor this
             if (email == true) {
-                System.out.println("Sending email to " + customer.getEmail());
+                System.out.println("Sending email to " + email);
             }
             if (pdf == true) {
                 System.out.println("Generating PDF invoice");
@@ -108,7 +120,7 @@ public class Order {
     }
 
     public double calculateTotalPrice() {
-        return price * quantity;
+        return cartItem.getPrice() * cartItem.getQuantity();
     }
 
     private double calculateDiscount(double total) {
@@ -160,6 +172,10 @@ public class Order {
         return taxRate;
     }
 
+    public int getDays() {
+        return days;
+    }
+
     public void updateDays() {
         days = days + 1;
         if (days > 365) {
@@ -171,6 +187,22 @@ public class Order {
         double total = calculateTotalPrice();
         total *= getCountryTaxRate();
         return total;
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public CartItem getCartItem() {
+        return cartItem;
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public boolean isActive() {
+        return isActive;
     }
 
     /*
