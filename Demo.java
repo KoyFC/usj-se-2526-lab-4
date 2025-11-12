@@ -1,9 +1,15 @@
+import Entities.Order;
+import Entities.Customer;
+
 public class Demo {
 
         public static void main(String[] args) {
                 System.out.println("=== RESTAURANT ORDER SYSTEM DEMO ===\n");
 
                 // Create and process a normal order
+                Customer customerOrder1 = new Customer("John Smith", "john@email.com", "555-1234",
+                                Customer.CustomerType.SILVER);
+
                 Order order1 = new Order("John Smith", "john@email.com", "555-1234",
                                 1, 25.0, 2, "ES", true);
                 System.out.println(order1.process(true, true, false));

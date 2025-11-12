@@ -1,3 +1,8 @@
+import Entities.Order;
+import Entities.Customer;
+import ValueObjects.Address;
+import ValueObjects.OrderFlags;
+
 public class TestRunner {
 
     private static int passed = 0;
@@ -20,12 +25,16 @@ public class TestRunner {
     private static void testOrderCreation() {
         System.out.println("Testing Order Creation...");
 
-        Order o = new Order("John", "john@email.com", "555-1234", 1, 10.0, 2, "ES", true);
+        Address address = new Address("123 Main St", "Madrid", "ES");
+        OrderFlags flags = new OrderFlags(OrderFlags.ShippingType.STANDARD, OrderFlags.WrapType.NONE,
+                OrderFlags.InsuranceType.NONE);
+        Order order = new Order(new Customer("John", "john@email.com", "555-1234", Customer.CustomerType.SILVER), 10.0,
+                2, address, flags, true);
 
-        assertEqual(o.name, "John", "Order name");
-        assertEqual(o.price, 10.0, "Order price");
-        assertEqual(o.quantity, 2, "Order quantity");
-        assertEqual(o.country, "ES", "Order country");
+        assertEqual(order.customer.getName(), "John", "Order name");
+        assertEqual(order.price, 10.0, "Order price");
+        assertEqual(order.quantity, 2, "Order quantity");
+        assertEqual(order.address.getCountry(), "ES", "Order country");
 
         System.out.println();
     }

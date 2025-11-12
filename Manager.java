@@ -1,42 +1,24 @@
 import java.util.*;
 
+import Entities.Customer;
+import Entities.Order;
+import ValueObjects.Address;
+import ValueObjects.OrderFlags;
+
 public class Manager {
     private List<Order> orders = new ArrayList<>();
     private double revenue = 0;
 
-    public void createOrder(String name, String email, String phone,
-            String address, String city, String country,
-            double price, int quantity, int customerType,
-            boolean isPremium, boolean expressShipping,
-            boolean giftWrap, boolean insurance) {
+    public void createOrder(Customer customer, Address address, double price, int quantity, OrderFlags flags) {
 
-        if (name == null || name == "")
+        if (customer == null || customer.getName() == "")
             return;
-        if (email == null || email == "")
+        if (customer.getEmail() == null || customer.getEmail() == "")
             return;
         if (price <= 0)
             return;
 
-        Order order = new Order(name, email, phone, customerType, price, quantity, country, true);
-
-        double discount = 0;
-        if (customerType == 3 && price * quantity > 100) {
-            discount = 0.1;
-        } else if (customerType == 2 && price * quantity > 100) {
-            discount = 0.08;
-        }
-
-        order.price = order.price * (1 - discount);
-
-        if (expressShipping) {
-            order.price = order.price + 9.99;
-        }
-        if (giftWrap) {
-            order.price = order.price + 2.99;
-        }
-        if (insurance) {
-            order.price = order.price + 4.99;
-        }
+        Order order = new Order(customer, price, quantity, address, flags, true);
 
         orders.add(order);
 
@@ -55,33 +37,20 @@ public class Manager {
         return "$" + String.format("%.2f", total);
     }
 
-    public double getTotalWithTax(Order o) {
-        double subtotal = o.price * o.quantity;
+    public double getTotalWithTax(Order order) { // TODO: Mover a order
+        double subtotal = order.calculateTotalPrice();
 
-        if (o.country.equals("ES")) {
+        if (order.address.getCountry().equals("ES")) {
             subtotal = subtotal * 1.21;
-        } else if (o.country.equals("FR")) {
+        } else if (order.address.getCountry().equals("FR")) {
             subtotal = subtotal * 1.20;
-        } else if (o.country.equals("DE")) {
+        } else if (order.address.getCountry().equals("DE")) {
             subtotal = subtotal * 1.19;
         } else {
             subtotal = subtotal * 1.15;
         }
 
         return subtotal;
-    }
-
-    public double calculateDiscount(Order order) {
-        double total = order.price * order.quantity;
-        double discount = 0;
-
-        if (order.customerType == 3 && total > 100) {
-            discount = total * 0.1;
-        } else if (order.customerType == 2 && total > 100) {
-            discount = total * 0.08;
-        }
-
-        return discount;
     }
 
     public void save(Order order, boolean email, boolean pdf, boolean backup) {
@@ -92,17 +61,17 @@ public class Manager {
 
         double total = getTotalWithTax(order);
 
-        System.out.println("INSERT INTO orders VALUES ('" + order.name + "', " + total + ")");
+        System.out.println("INSERT INTO orders VALUES ('" + order.customer.getName() + "', " + total + ")");
 
         if (email) {
-            System.out.println("EMAIL: Order confirmed for " + order.name);
-            System.out.println("To: " + order.email);
+            System.out.println("EMAIL: Order confirmed for " + order.customer.getName());
+            System.out.println("To: " + order.customer.getEmail());
             System.out.println("Total: $" + total);
         }
 
         if (pdf) {
             System.out.println("PDF: Generating invoice...");
-            System.out.println("Customer: " + order.name);
+            System.out.println("Customer: " + order.customer.getName());
             System.out.println("Amount: $" + total);
         }
 
@@ -118,9 +87,9 @@ public class Manager {
 
         if (type == 1) {
             if (detailed) {
-                for (Order o : orders) {
-                    if (o.isActive || includeInactive) {
-                        report = report + "Order: " + o.name + " - $" + getTotalWithTax(o) + "\n";
+                for (Order order : orders) {
+                    if (order.isActive || includeInactive) {
+                        report = report + "Order: " + order.customer.getName() + " - $" + getTotalWithTax(order) + "\n";
                     }
                 }
             } else {
@@ -128,26 +97,43 @@ public class Manager {
             }
         } else if (type == 2) {
             if (detailed) {
-                for (Order o : orders) {
-                    if (o.customerType == 3) {
-                        report = report + "GOLD: " + o.name + "\n";
-                    } else if (o.customerType == 2) {
-                        report = report + "SILVER: " + o.name + "\n";
-                    } else {
-                        report = report + "NORMAL: " + o.name + "\n";
+                for (Order order : orders) {
+
+                    switch (order.customer.getType()) {
+                        case GOLD:
+                            report = report + "GOLD: " + order.customer.getName() + "\n";
+                            break;
+                        case SILVER:
+                            report = report + "SILVER: " + order.customer.getName() + "\n";
+                            break;
+                        case NORMAL:
+                            report = report + "NORMAL: " + order.customer.getName() + "\n";
+                            break;
+                        default:
+                            report = report + "NORMAL: " + order.customer.getName() + "\n";
+                            break;
                     }
                 }
             } else {
-                int gold = 0, silver = 0, normal = 0;
-                for (Order o : orders) {
-                    if (o.customerType == 3)
-                        gold++;
-                    else if (o.customerType == 2)
-                        silver++;
-                    else
-                        normal++;
+                int goldCount = 0, silverCount = 0, normalCount = 0;
+                for (Order order : orders) {
+
+                    switch (order.customer.getType()) {
+                        case GOLD:
+                            goldCount++;
+                            break;
+                        case SILVER:
+                            silverCount++;
+                            break;
+                        case NORMAL:
+                            normalCount++;
+                            break;
+                        default:
+                            normalCount++;
+                            break;
+                    }
                 }
-                report = "Gold: " + gold + ", Silver: " + silver + ", Normal: " + normal;
+                report = "Gold: " + goldCount + ", Silver: " + silverCount + ", Normal: " + normalCount;
             }
         }
 
@@ -191,10 +177,6 @@ public class Manager {
 
     public boolean validateAndProcess(Order order, int action) {
         if (order == null)
-            return false;
-        if (order.name == null || order.name == "")
-            return false;
-        if (order.email == null || order.email == "")
             return false;
         if (order.price <= 0)
             return false;

@@ -1,5 +1,7 @@
 import java.util.*;
 
+import Entities.Order;
+
 public class Utils {
 
     public static double handle(Order order) {
@@ -8,7 +10,7 @@ public class Utils {
 
         order.days = order.days + 1;
 
-        System.out.println("Processing order for " + order.name);
+        System.out.println("Processing order for " + order.customer.getName());
 
         return total;
     }
@@ -22,7 +24,8 @@ public class Utils {
             return true;
         if (order.quantity <= 0)
             return true;
-        if (order.name == null || order.name == "")
+        if (order.customer.getName() == null || order.customer.getName() == "") // TODO: All instances of name
+                                                                                // should be validated
             return true;
         return false;
     }
@@ -34,7 +37,7 @@ public class Utils {
     public static Order findOrder(List<Order> orders, String name) {
         try {
             for (Order order : orders) {
-                if (order.name.equals(name)) {
+                if (order.customer.getName().equals(name)) {
                     return order;
                 }
             }
@@ -94,13 +97,14 @@ public class Utils {
     }
 
     public static String formatOrder(Order order) {
-        String resultString = order.name + " | " + order.email + " | $" + order.calculateTotalPrice();
+        String resultString = order.customer.getName() + " | " + order.customer.getEmail() + " | $"
+                + order.calculateTotalPrice();
         return resultString;
     }
 
     public static void processOrder(Order order) {
         try {
-            String upper = order.name.toUpperCase();
+            String upper = order.customer.getName().toUpperCase();
             System.out.println(upper);
         } catch (NullPointerException e) {
             // do nothing
