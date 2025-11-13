@@ -1,30 +1,20 @@
 import java.util.*;
 
 import Entities.Order;
+import Entities.Customer;
+import ValueObjects.CartItem;
+import ValueObjects.OrderFlags;
 
 public class Utils {
-
-    public static double handle(Order order) {
-        // increase by tax
+    public static double handleOrder(Order order) {
         double total = order.getCartItem().getPrice() * 1.21;
-
         order.updateDays();
-
         System.out.println("Processing order for " + order.getCustomer().getName());
-
         return total;
     }
 
     public static boolean isInvalid(Order order) {
-        if (order == null)
-            return true;
-        if (!order.isActive())
-            return true;
-        if (order.getCartItem().getQuantity() <= 0)
-            return true;
-        if (order.getCartItem().getQuantity() <= 0)
-            return true;
-        if (order.getCustomer().getName() == null || order.getCustomer().getName() == "")
+        if (order == null || !order.isActive())
             return true;
         return false;
     }
@@ -33,26 +23,33 @@ public class Utils {
         return isInvalid(order) || order.getDays() < 1;
     }
 
-    public static Order findOrder(List<Order> orders, String name) {
-        try {
-            for (Order order : orders) {
-                if (order.getCustomer().getName().equals(name)) {
-                    return order;
-                }
-            }
-        } catch (Exception e) {
-            // ignore
-        }
-        return null;
+    public static Order findOrderByName(List<Order> orders, String name) {
+        if (orders == null)
+            return null;
+        Order result = orders.stream().filter(order -> name.equals(order.getCustomer().getName())).findAny()
+                .orElse(null);
+        return result;
     }
 
-    public static void processValue(String name, int type, double value) {
-        System.out.println("Processing: " + name);
+    public static void processValue(Order order) {
+        if (order == null)
+            return;
 
-        if (type == 1) {
+        Customer customer = order.getCustomer();
+        if (customer == null)
+            return;
+
+        CartItem cartItem = order.getCartItem();
+        if (cartItem == null)
+            return;
+
+        System.out.println("Processing: " + customer.getName());
+        double value = cartItem.getPrice();
+
+        if (customer.getType() == Customer.CustomerType.NORMAL) {
             System.out.println("Type 1 processing");
             value = value * 1.1;
-        } else if (type == 2) {
+        } else if (customer.getType() == Customer.CustomerType.SILVER) {
             System.out.println("Type 2 processing");
             value = value * 1.2;
         }
@@ -62,108 +59,64 @@ public class Utils {
         }
     }
 
-    public static double calc(double a, double b, int op) {
-        double result = 0;
-
-        switch (op) {
-            case 1:
-                result = a + b;
-                System.out.println("Addition: " + result);
-                break;
-            case 2:
-                result = a - b;
-                System.out.println("Subtraction: " + result);
-                break;
-            case 3:
-                result = a * b;
-                System.out.println("Multiplication: " + result);
-                break;
-            case 4:
-                if (b != 0) {
-                    result = a / b;
-                    System.out.println("Division: " + result);
-                } else {
-                    System.out.println("Error: Division by zero");
-                    return -999999;
-                }
-                break;
-            default:
-                System.out.println("Unknown operation");
-                return -888888;
-        }
-
-        return result;
-    }
-
-    public static String formatOrder(Order order) {
-        String resultString = order.getCustomer().getName() + " | " + order.getCustomer().getEmail() + " | $"
-                + order.calculateTotalPrice();
-        return resultString;
-    }
-
-    public static void processOrder(Order order) {
-        try {
-            String upper = order.getCustomer().getName().toUpperCase();
-            System.out.println(upper);
-        } catch (NullPointerException e) {
-            // do nothing
-        } catch (Exception e) {
-            // ignore
-        }
-    }
-
-    public static boolean validateString(String text, int length, boolean blockSpaces) {
-        if (text == null)
+    public static boolean validateString(String text, int length) {
+        if (text == null || text == "" || text.length() < length) {
             return false;
-        if (text == "")
-            return false;
-        if (text.length() < length)
-            return false;
-        if (blockSpaces == true) {
-            if (text.contains(" "))
-                return false;
         }
         return true;
     }
 
-    public static void sendNotification(Order order, int type, boolean isUrgent) {
-        if (type == 1) {
+    public static boolean validateStringNoSpaces(String text, int length) {
+        if (validateString(text, length) || text.contains(" ")) {
+            return false;
+        }
+        return true;
+    }
+
+    public enum NotificationType {
+        EMAIL,
+        SMS,
+        PUSH
+    }
+
+    public static void sendNotification(Order order, NotificationType type, boolean isUrgent) {
+        if (type == NotificationType.EMAIL) {
             System.out.println("Email sent");
             if (isUrgent) {
                 System.out.println("URGENT!");
             }
-        } else if (type == 2) {
+        } else if (type == NotificationType.SMS) {
             System.out.println("SMS sent");
             if (isUrgent) {
                 System.out.println("HIGH PRIORITY");
             }
-        } else if (type == 3) {
+        } else if (type == NotificationType.PUSH) {
             System.out.println("Push notification sent");
         }
     }
 
-    public static double applyFees(double amount, int customerType, boolean isPremium, boolean isExpress) {
-        double fee = 0;
+    public static double applyFees(double amount, Customer.CustomerType type, OrderFlags.ShippingType shipping) {
+        double fee = 0.0;
 
-        if (customerType == 1) {
-            fee = 2.99;
-            if (isExpress) {
-                fee = fee + 5.99;
-            }
-        } else if (customerType == 2) {
-            fee = 1.99;
-            if (isExpress) {
-                fee = fee + 4.99;
-            }
-        } else if (customerType == 3) {
-            fee = 0;
-            if (isExpress) {
-                fee = fee + 3.99;
-            }
-        }
-
-        if (isPremium) {
-            fee = fee * 0.5;
+        switch (type) {
+            case SILVER:
+                fee = 2.99;
+                if (shipping == OrderFlags.ShippingType.EXPRESS) {
+                    fee += 5.99;
+                }
+                break;
+            case NORMAL:
+                fee = 1.99;
+                if (shipping == OrderFlags.ShippingType.EXPRESS) {
+                    fee += 4.99;
+                }
+                break;
+            case GOLD:
+                fee = 0.0;
+                if (shipping == OrderFlags.ShippingType.EXPRESS) {
+                    fee += 3.99;
+                }
+                break;
         }
 
         return amount + fee;

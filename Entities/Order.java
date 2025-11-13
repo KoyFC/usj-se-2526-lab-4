@@ -3,6 +3,10 @@ package Entities;
 import ValueObjects.Address;
 import ValueObjects.CartItem;
 import ValueObjects.OrderFlags;
+import ValueObjects.ProcessingFlags;
+
+import java.util.HashMap;
+
 import Validator.Validator;
 
 public class Order {
@@ -13,6 +17,16 @@ public class Order {
     private boolean isActive;
     private int days;
 
+    private HashMap<String, Double> countryTaxRates = new HashMap<>() {
+        {
+            put("ES", 0.21);
+            put("FR", 0.20);
+            put("DE", 0.19);
+            put("UK", 0.20);
+            put("DEFAULT", 0.15);
+        }
+    };
+
     public Order(Customer customer, CartItem cartItem, Address address, OrderFlags flags, boolean isActive) {
         this.customer = customer;
         this.cartItem = cartItem;
@@ -21,19 +35,7 @@ public class Order {
         this.isActive = isActive;
         this.days = 0;
 
-        // double discount = calculateDiscount();
-        // if (discount > 0) {
-        // this.price = this.price * (1 - discount);
-        // }
-        this.cartItem.setQuantity(
-                Validator.validate(
-                        cartItem.getQuantity(), v -> v > 0,
-                        "Quantity must be greater than zero."));
-        this.address = address;
-        this.flags = flags;
-        this.isActive = isActive;
-        this.days = 0;
-
+        // Tests don't pass if we apply these adjustments
         // double discount = calculateDiscount();
         // if (discount > 0) {
         // this.price = this.price * (1 - discount);
@@ -78,7 +80,7 @@ public class Order {
         return additionalCharges;
     }
 
-    public String process(boolean flag, boolean email, boolean pdf) {
+    public String process(ProcessingFlags flags) {
         String result = "";
 
         if (!isActive) {
@@ -105,11 +107,11 @@ public class Order {
         result += "Items: " + cartItem.getQuantity() + " x $" + cartItem.getPrice() + "\n";
         result += "Total: $" + String.format("%.2f", total) + "\n";
 
-        if (flag == true) { // TODO: Refactor this
-            if (email == true) {
-                System.out.println("Sending email to " + email);
+        if (flags.isNotificationEnabled()) {
+            if (flags.isEmail()) {
+                System.out.println("Sending email to " + customer.getEmail());
             }
-            if (pdf == true) {
+            if (flags.isPdf()) {
                 System.out.println("Generating PDF invoice");
             }
         }
@@ -124,52 +126,40 @@ public class Order {
     }
 
     private double calculateDiscount(double total) {
-        double discount = 0;
-        switch (customer.getType()) {
-            case Customer.CustomerType.SILVER:
-                if (total > 100) {
-                    discount = 0.08;
-                } else if (total > 75) {
-                    discount = 0.04;
-                }
-                break;
-            case Customer.CustomerType.GOLD:
-                if (total > 100) {
-                    if (days > 30) {
-                        discount = 0.15;
-                    } else {
-                        discount = 0.1;
-                    }
-                } else if (total > 50) {
-                    discount = 0.05;
-                }
-                break;
+        Customer.CustomerType type = customer.getType();
+
+        switch (type) {
+            case SILVER:
+                return silverDiscount(total);
+
+            case GOLD:
+                return goldDiscount(total, days);
+
             default:
-                // No discount
-                break;
+                return 1.0;
         }
-        return 1 - discount;
+    }
+
+    private double silverDiscount(double total) {
+        if (total > 100)
+            return 0.92;
+        if (total > 75)
+            return 0.96;
+        return 1.0;
+    }
+
+    private double goldDiscount(double total, int days) {
+        if (total > 100) {
+            return days > 30 ? 0.85 : 0.90;
+        }
+        if (total > 50)
+            return 0.95;
+        return 1.0;
     }
 
     private double getCountryTaxRate() {
-        double taxRate = 0;
-        switch (address.getCountry()) {
-            case "ES":
-                taxRate = 1.21;
-                break;
-            case "FR":
-                taxRate = 1.20;
-                break;
-            case "DE":
-                taxRate = 1.19;
-                break;
-            case "UK":
-                taxRate = 1.20;
-                break;
-            default:
-                taxRate = 1.15;
-        }
-        return taxRate;
+        String country = countryTaxRates.containsKey(address.getCountry()) ? address.getCountry() : "DEFAULT";
+        return 1 + countryTaxRates.get(country);
     }
 
     public int getDays() {
@@ -205,21 +195,8 @@ public class Order {
         return isActive;
     }
 
-    /*
-     * public static void main(String[] args) {
-     * System.out.println("=== Order Demo ===\n");
-     * 
-     * Order order1 = new Order("John Doe", "john@email.com", "555-1234", 1, 15.0,
-     * 2, "ES", true);
-     * System.out.println("Normal Order:");
-     * System.out.println(order1.process(true, true, false));
-     * System.out.println();
-     * 
-     * Order order2 = new Order("Jane Smith", "jane@email.com", "555-5678", 3, 60.0,
-     * 2, "ES", true);
-     * order2.days = 35;
-     * System.out.println("Gold Order (Old Customer):");
-     * System.out.println(order2.process(true, false, true));
-     * }
-     */
+    @Override
+    public String toString() {
+        return getCustomer().getName() + " | " + getCustomer().getEmail() + " | $" + calculateTotalPrice();
+    }
 }

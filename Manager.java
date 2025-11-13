@@ -5,20 +5,22 @@ import Entities.Order;
 import ValueObjects.Address;
 import ValueObjects.CartItem;
 import ValueObjects.OrderFlags;
+import ValueObjects.SaveFlags;
+import ValueObjects.StatsFlags;
 
 public class Manager {
     private List<Order> orders = new ArrayList<>();
     private double revenue = 0;
 
+    private HashMap<Customer.CustomerType, Double> discountRates = new HashMap<>() {
+        {
+            put(Customer.CustomerType.GOLD, 0.1);
+            put(Customer.CustomerType.SILVER, 0.08);
+            put(Customer.CustomerType.NORMAL, 0.0);
+        }
+    };
+
     public void createOrder(Customer customer, Address address, CartItem cartItem, OrderFlags flags) {
-
-        if (customer == null || customer.getName() == "")
-            return;
-        if (customer.getEmail() == null || customer.getEmail() == "")
-            return;
-        if (cartItem.getPrice() <= 0)
-            return;
-
         Order order = new Order(customer, cartItem, address, flags, true);
 
         orders.add(order);
@@ -26,19 +28,17 @@ public class Manager {
         revenue = revenue + cartItem.getPrice() * cartItem.getQuantity();
     }
 
-    public String formatPrice(CartItem cartItem, int tier) { // TODO: Tier
+    public String formatPrice(CartItem cartItem, Customer.CustomerType tier) {
         double total = cartItem.getPrice() * cartItem.getQuantity();
-
-        if (tier == 3 && total > 100) {
-            total = total * 0.9;
-        } else if (tier == 2 && total > 100) {
-            total = total * 0.92;
+        if (total > 100) {
+            double discountFactor = 1 - discountRates.getOrDefault(tier, 0.0);
+            total = total * discountFactor;
         }
 
         return "$" + String.format("%.2f", total);
     }
 
-    public void save(Order order, boolean email, boolean pdf, boolean backup) {
+    public void save(Order order, SaveFlags flags) {
         if (order == null)
             return;
         if (!order.isActive())
@@ -48,85 +48,106 @@ public class Manager {
 
         System.out.println("INSERT INTO orders VALUES ('" + order.getCustomer().getName() + "', " + total + ")");
 
-        if (email) {
+        if (flags.isEmail()) {
             System.out.println("EMAIL: Order confirmed for " + order.getCustomer().getName());
             System.out.println("To: " + order.getCustomer().getEmail());
             System.out.println("Total: $" + total);
         }
 
-        if (pdf) {
+        if (flags.isPdf()) {
             System.out.println("PDF: Generating invoice...");
             System.out.println("Customer: " + order.getCustomer().getName());
             System.out.println("Amount: $" + total);
         }
 
-        if (backup) {
+        if (flags.isBackup()) {
             System.out.println("BACKUP: Saving to backup server...");
         }
 
         revenue = revenue + total;
     }
 
-    public String generateReport(int type, boolean detailed, boolean includeInactive) {
+    public enum ReportType {
+        ORDERS,
+        CUSTOMER_TYPES
+    }
+
+    public String generateReport(ReportType type, boolean detailed, boolean includeInactive) {
         String report = "";
 
-        if (type == 1) {
-            if (detailed) {
-                for (Order order : orders) {
-                    if (order.isActive() || includeInactive) {
-                        report = report + "Order: " + order.getCustomer().getName() + " - $" + order.getTotalWithTax()
-                                + "\n";
-                    }
-                }
-            } else {
-                report = "Total Revenue: $" + revenue;
-            }
-        } else if (type == 2) {
-            if (detailed) {
-                for (Order order : orders) {
-
-                    switch (order.getCustomer().getType()) {
-                        case GOLD:
-                            report = report + "GOLD: " + order.getCustomer().getName() + "\n";
-                            break;
-                        case SILVER:
-                            report = report + "SILVER: " + order.getCustomer().getName() + "\n";
-                            break;
-                        case NORMAL:
-                            report = report + "NORMAL: " + order.getCustomer().getName() + "\n";
-                            break;
-                        default:
-                            report = report + "NORMAL: " + order.getCustomer().getName() + "\n";
-                            break;
-                    }
-                }
-            } else {
-                int goldCount = 0, silverCount = 0, normalCount = 0;
-                for (Order order : orders) {
-
-                    switch (order.getCustomer().getType()) {
-                        case GOLD:
-                            goldCount++;
-                            break;
-                        case SILVER:
-                            silverCount++;
-                            break;
-                        case NORMAL:
-                            normalCount++;
-                            break;
-                        default:
-                            normalCount++;
-                            break;
-                    }
-                }
-                report = "Gold: " + goldCount + ", Silver: " + silverCount + ", Normal: " + normalCount;
-            }
+        switch (type) {
+            case ORDERS:
+                report = detailed ? buildOrdersReportDetailed(includeInactive) : buildOrdersReportSummary();
+                break;
+            case CUSTOMER_TYPES:
+                report = detailed ? buildCustomerTypesReportDetailed() : buildCustomerTypesReportSummary();
+                break;
+            default:
+                break;
         }
 
         return report;
     }
 
-    public void stats(boolean print, boolean save, boolean email) {
+    private String buildOrdersReportDetailed(boolean includeInactive) {
+        String report = "";
+        for (Order order : orders) {
+            if (order.isActive() || includeInactive) {
+                report = report + "Order: " + order.getCustomer().getName() + " - $"
+                        + String.format("%.2f", order.getTotalWithTax()) + "\n";
+            }
+        }
+        return report;
+    }
+
+    private String buildOrdersReportSummary() {
+        return String.format("Total Revenue: $%.2f", revenue);
+    }
+
+    private String buildCustomerTypesReportDetailed() {
+        String report = "";
+        for (Order order : orders) {
+            report = report + order.getCustomer().getType().name() + ": " + order.getCustomer().getName() + "\n";
+        }
+        return report;
+    }
+
+    private String buildCustomerTypesReportSummary() {
+        EnumMap<Customer.CustomerType, Integer> counts = new EnumMap<>(Customer.CustomerType.class);
+        for (Order order : orders) {
+            Customer.CustomerType typeKey = order.getCustomer().getType();
+            counts.put(typeKey, counts.getOrDefault(typeKey, 0) + 1);
+        }
+        return "Gold: " + counts.getOrDefault(Customer.CustomerType.GOLD, 0) + ", Silver: "
+                + counts.getOrDefault(Customer.CustomerType.SILVER, 0) + ", Normal: "
+                + counts.getOrDefault(Customer.CustomerType.NORMAL, 0);
+    }
+
+    private double[] computeStats() {
+        double sum = 0;
+        double max = 0;
+        double min = Double.MAX_VALUE;
+
+        for (Order order : orders) {
+            double orderTotal = order.getCartItem().getPrice() * order.getCartItem().getQuantity();
+            sum += orderTotal;
+            if (orderTotal > max)
+                max = orderTotal;
+            if (orderTotal < min)
+                min = orderTotal;
+        }
+
+        double average = 0;
+        if (orders.size() > 0) {
+            average = sum / orders.size();
+        } else {
+            min = 0;
+        }
+
+        return new double[] { average, max, min };
+    }
+
+    public void stats(StatsFlags flags) {
         double average = 0;
         double max = 0;
         double min = 999999;
@@ -144,7 +165,7 @@ public class Manager {
             average = average / orders.size();
         }
 
-        if (print) {
+        if (flags.shouldPrint()) {
             System.out.println("=== STATISTICS ===");
             System.out.println("Average: $" + average);
             System.out.println("Max: $" + max);
@@ -152,46 +173,66 @@ public class Manager {
             System.out.println("Total Orders: " + orders.size());
         }
 
-        if (save) {
+        if (flags.shouldSave()) {
             System.out.println("Saving statistics to file...");
         }
 
-        if (email) {
+        if (flags.shouldSendEmail()) {
             System.out.println("Emailing statistics to admin@company.com");
         }
     }
 
-    public boolean validateAndProcess(Order order, int action) {
+    public enum ActionType {
+        NORMAL,
+        URGENT,
+        REVIEW
+    }
+
+    public boolean validateAndProcess(Order order, ActionType action) {
         if (order == null)
             return false;
 
         CartItem cartItem = order.getCartItem();
-        if (cartItem.getPrice() <= 0)
-            return false;
-        if (cartItem.getQuantity() <= 0)
+        double price = cartItem.getPrice();
+        int qty = cartItem.getQuantity();
+
+        if (price <= 0 || qty <= 0)
             return false;
 
-        if (action == 1) {
-            orders.add(order);
-            revenue = revenue + cartItem.getPrice() * cartItem.getQuantity();
-            System.out.println("Order processed normally");
-            return true;
-        } else if (action == 2) {
-            orders.add(0, order);
-            revenue = revenue + cartItem.getPrice() * cartItem.getQuantity() * 1.5;
-            System.out.println("URGENT order processed");
-            return true;
-        } else if (action == 3) {
-            System.out.println("Order sent for review");
-            if (cartItem.getPrice() * cartItem.getQuantity() > 500) {
-                System.out.println("High value - needs approval");
+        switch (action) {
+            case NORMAL:
+                return processNormal(order, price, qty);
+            case URGENT:
+                return processUrgent(order, price, qty);
+            case REVIEW:
+                return processReview(order, price, qty);
+            default:
                 return false;
-            }
-            orders.add(order);
-            revenue = revenue + cartItem.getPrice() * cartItem.getQuantity();
-            return true;
         }
+    }
 
-        return false;
+    private boolean processNormal(Order order, double price, int qty) {
+        orders.add(order);
+        revenue = revenue + price * qty;
+        System.out.println("Order processed normally");
+        return true;
+    }
+
+    private boolean processUrgent(Order order, double price, int qty) {
+        orders.add(0, order);
+        revenue = revenue + price * qty * 1.5;
+        System.out.println("URGENT order processed");
+        return true;
+    }
+
+    private boolean processReview(Order order, double price, int qty) {
+        System.out.println("Order sent for review");
+        if (price * qty > 500) {
+            System.out.println("High value - needs approval");
+            return false;
+        }
+        orders.add(order);
+        revenue = revenue + price * qty;
+        return true;
     }
 }
